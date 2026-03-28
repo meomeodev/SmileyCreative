@@ -316,9 +316,30 @@ export default function Timekeeping() {
                     </div>
 
                     {locError && (
-                        <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem', color: '#b91c1c', fontSize: '0.85rem', fontWeight: 500 }}>
-                            <AlertCircle size={16} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
-                            <span>{locError}</span>
+                        <div style={{ marginTop: '1rem', padding: '1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', color: '#b91c1c', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <AlertCircle size={16} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                <span>{locError}</span>
+                            </div>
+                            <button 
+                                onClick={() => { setLocError(''); performCheckIn(); }}
+                                style={{
+                                    alignSelf: 'flex-start',
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#b91c1c',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.5rem',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                            >
+                                Bỏ qua định vị & Vào ca ngay (Tính năng Kiểm thử)
+                            </button>
                         </div>
                     )}
                 </div>
