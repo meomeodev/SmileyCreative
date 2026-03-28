@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, Filter, MoreVertical, LayoutGrid, List, CheckSquare, Calendar, Folder, X, Edit, Trash2 } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import toast from 'react-hot-toast';
+import { db } from '../config/firebase';
+import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 
-const INITIAL_TASKS: any[] = [];
+
 
 const INITIAL_TEAM = [
     { id: 1, name: 'Julian Peters', role: 'Creative Director', avatar: 'https://i.pravatar.cc/150?img=15', locked: false },
@@ -15,56 +16,104 @@ const INITIAL_TEAM = [
 
 export default function Projects() {
     const [activeTab, setActiveTab] = useState('Phân công');
-    const [tasks, setTasks] = useLocalStorage('smiley_projects_tasks_multi', INITIAL_TASKS);
-    const [team] = useLocalStorage('smiley_projects_team', INITIAL_TEAM);
-    const [files, setFiles] = useLocalStorage('smiley_projects_files', [] as any[]);
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [team, setTeam] = useState<any[]>(INITIAL_TEAM);
+    const [files, setFiles] = useState<any[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewFile, setPreviewFile] = useState<any>(null);
 
+    useEffect(() => {
+        const loadAllData = async () => {
+            try {
+                // Load Tasks
+                const tasksQ = query(collection(db, 'project_tasks'));
+                const tasksSnap = await getDocs(tasksQ);
+                setTasks(tasksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                
+                // Load Team
+                const teamQ = query(collection(db, 'project_team'));
+                const teamSnap = await getDocs(teamQ);
+                const fetchedTeam = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (fetchedTeam.length > 0) setTeam(fetchedTeam);
+
+                // Load Files
+                const filesQ = query(collection(db, 'project_files'));
+                const filesSnap = await getDocs(filesQ);
+                setFiles(filesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu trang dự án:", error);
+                toast.error("Không thể kết nối đến máy chủ");
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+        loadAllData();
+    }, []);
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
+            toast.loading('Đang tải file lên Cloud...', { id: 'upload' });
             const uploadedFiles = Array.from(e.target.files);
             
-            const filePromises = uploadedFiles.map(f => {
-                return new Promise<any>((resolve) => {
-                    const isImage = f.type.startsWith('image/');
-                    const isSmallEnoughForStorage = f.size < 3 * 1024 * 1024; // 3MB limit
-                    
-                    if (isImage && isSmallEnoughForStorage) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+            try {
+                const filePromises = uploadedFiles.map(f => {
+                    return new Promise<any>((resolve) => {
+                        const isImage = f.type.startsWith('image/');
+                        const isSmallEnoughForStorage = f.size < 3 * 1024 * 1024; // 3MB limit
+                        
+                        if (isImage && isSmallEnoughForStorage) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                resolve({
+                                    name: f.name,
+                                    size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
+                                    type: f.type || 'Không xác định',
+                                    date: new Date().toLocaleDateString('vi-VN'),
+                                    data: event.target?.result // Base64 string
+                                });
+                            };
+                            reader.readAsDataURL(f);
+                        } else {
                             resolve({
-                                id: Date.now() + Math.random(),
                                 name: f.name,
                                 size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
                                 type: f.type || 'Không xác định',
                                 date: new Date().toLocaleDateString('vi-VN'),
-                                data: event.target?.result // Base64 string
+                                data: null
                             });
-                        };
-                        reader.readAsDataURL(f);
-                    } else {
-                        resolve({
-                            id: Date.now() + Math.random(),
-                            name: f.name,
-                            size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
-                            type: f.type || 'Không xác định',
-                            date: new Date().toLocaleDateString('vi-VN'),
-                            data: null
-                        });
-                    }
+                        }
+                    });
                 });
-            });
 
-            const newFiles = await Promise.all(filePromises);
-            setFiles([...newFiles, ...files]);
+                const newFilesData = await Promise.all(filePromises);
+                const successfulFiles = [];
+                for (const fileData of newFilesData) {
+                    const docRef = await addDoc(collection(db, 'project_files'), fileData);
+                    successfulFiles.push({ id: docRef.id, ...fileData });
+                }
+                
+                setFiles([...successfulFiles, ...files]);
+                toast.success('Đã lưu file thành công!', { id: 'upload' });
+            } catch (err: any) {
+                console.error(err);
+                toast.error('Lỗi upload file: ' + err.message, { id: 'upload' });
+            }
             e.target.value = '';
         }
     };
 
-    const handleDeleteFile = (id: number) => {
-        if (confirm('Bạn có chắc chắn muốn xóa tệp này?')) {
-            setFiles(files.filter((f: any) => f.id !== id));
+    const handleDeleteFile = async (id: string) => {
+        if (confirm('Bạn có chắc chắn muốn xóa tệp này trên Cloud?')) {
+            toast.loading('Đang xóa...', { id: 'del-file' });
+            try {
+                await deleteDoc(doc(db, 'project_files', id));
+                setFiles(files.filter((f: any) => f.id !== id));
+                toast.success('Đã xóa tệp', { id: 'del-file' });
+            } catch (err: any) {
+                toast.error('Lỗi: ' + err.message, { id: 'del-file' });
+            }
         }
     };
     
@@ -86,21 +135,26 @@ export default function Projects() {
         e.dataTransfer.setData('memberId', member.id.toString());
     };
 
-    const handleDrop = (e: React.DragEvent, taskId: number) => {
+    const handleDrop = async (e: React.DragEvent, taskId: string) => {
         e.preventDefault();
         const memberId = e.dataTransfer.getData('memberId');
         if (!memberId) return;
 
         const member = team.find((m: any) => m.id.toString() === memberId);
         if (member) {
-            setTasks(tasks.map((t: any) => {
-                if (t.id === taskId) {
-                    const currentAssignees = t.assignees || (t.assignee ? [t.assignee] : []);
-                    if (currentAssignees.some((a: any) => a.id === member.id)) return t;
-                    return { ...t, assignees: [...currentAssignees, { id: member.id, name: member.name, avatar: member.avatar }] };
-                }
-                return t;
-            }));
+            const currentTask = tasks.find(t => t.id === taskId);
+            if (!currentTask) return;
+            const currentAssignees = currentTask.assignees || (currentTask.assignee ? [currentTask.assignee] : []);
+            if (currentAssignees.some((a: any) => a.id === member.id)) return;
+            
+            const updatedAssignees = [...currentAssignees, { id: member.id, name: member.name, avatar: member.avatar }];
+            try {
+                await updateDoc(doc(db, 'project_tasks', String(taskId)), { assignees: updatedAssignees });
+                setTasks(tasks.map((t: any) => t.id === taskId ? { ...t, assignees: updatedAssignees } : t));
+            } catch (err: any) {
+                console.error(err);
+                toast.error("Lỗi cập nhật người thực hiện: " + err.message);
+            }
         }
     };
 
@@ -133,7 +187,7 @@ export default function Projects() {
         setEditingTask(null);
     };
 
-    const handleSaveTask = () => {
+    const handleSaveTask = async () => {
         if (!formData.title) {
             toast.error('Vui lòng nhập tên công việc!');
             return;
@@ -149,36 +203,57 @@ export default function Projects() {
         if (formData.status === 'HOÀN THÀNH') statusColor = '#10B981';
         if (formData.status === 'NHÁP') statusColor = '#6B7280';
 
-        if (editingTask) {
-            setTasks(tasks.map((t: any) => 
-                t.id === editingTask.id 
-                ? { ...t, ...formData, typeColor, statusColor }
-                : t
-            ));
-        } else {
-            setTasks([...tasks, {
-                id: Date.now(),
-                ...formData,
-                typeColor,
-                statusColor,
-                assignees: []
-            }]);
+        toast.loading('Đang lưu công việc...', { id: 'save-task' });
+        try {
+            if (editingTask) {
+                const updateData = { ...formData, typeColor, statusColor };
+                await updateDoc(doc(db, 'project_tasks', String(editingTask.id)), updateData);
+                setTasks(tasks.map((t: any) => t.id === editingTask.id ? { ...t, ...updateData } : t));
+                toast.success('Cập nhật thành công', { id: 'save-task' });
+            } else {
+                const newTaskData = {
+                    ...formData,
+                    typeColor,
+                    statusColor,
+                    assignees: []
+                };
+                const docRef = await addDoc(collection(db, 'project_tasks'), newTaskData);
+                setTasks([...tasks, { id: docRef.id, ...newTaskData }]);
+                toast.success('Đã thêm công việc mới', { id: 'save-task' });
+            }
+            closeModal();
+        } catch (err: any) {
+            console.error(err);
+            toast.error('Lỗi: ' + err.message, { id: 'save-task' });
         }
-        closeModal();
     };
 
-    const handleDeleteTask = (id: number) => {
-        if (confirm("Bạn có chắc chắn muốn xóa công việc này?")) {
-            setTasks(tasks.filter((t: any) => t.id !== id));
-            if (editingTask && editingTask.id === id) closeModal();
+    const handleDeleteTask = async (id: string) => {
+        if (confirm("Bạn có chắc chắn muốn xóa công việc này khỏi Firebase?")) {
+            toast.loading('Đang xóa...', { id: 'del-task' });
+            try {
+                await deleteDoc(doc(db, 'project_tasks', String(id)));
+                setTasks(tasks.filter((t: any) => t.id !== id));
+                if (editingTask && editingTask.id === id) closeModal();
+                toast.success('Đã xóa', { id: 'del-task' });
+            } catch (err: any) {
+                toast.error('Lỗi: ' + err.message, { id: 'del-task' });
+            }
         }
     };
 
-    const handleRemoveAssignee = (taskId: number, memberId: number, e: React.MouseEvent) => {
+    const handleRemoveAssignee = async (taskId: string, memberId: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        setTasks(tasks.map((t: any) => 
-            t.id === taskId ? { ...t, assignees: (t.assignees || []).filter((a: any) => a.id !== memberId) } : t
-        ));
+        const currentTask = tasks.find(t => t.id === taskId);
+        if (!currentTask) return;
+        const remainingAssignees = (currentTask.assignees || []).filter((a: any) => a.id !== memberId);
+        
+        try {
+            await updateDoc(doc(db, 'project_tasks', String(taskId)), { assignees: remainingAssignees });
+            setTasks(tasks.map((t: any) => t.id === taskId ? { ...t, assignees: remainingAssignees } : t));
+        } catch (err: any) {
+            toast.error("Lỗi gỡ người thực hiện: " + err.message);
+        }
     };
 
     return (
@@ -284,7 +359,12 @@ export default function Projects() {
                             </h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '2rem' }}>
-                                {filteredTasks.map((task: any) => (
+                                {isLoadingData ? (
+                                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ width: '30px', height: '30px', border: '3px solid #ff7d0d', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                        Đang tải danh sách công việc...
+                                    </div>
+                                ) : filteredTasks.map((task: any) => (
                                     <div key={task.id} style={{
                                         backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem',
                                         border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
@@ -447,7 +527,12 @@ export default function Projects() {
                                 Tệp cá nhân / Tải lên gần đây
                             </h3>
                             
-                            {files.length > 0 ? (
+                            {isLoadingData ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-light)', backgroundColor: '#F9FAFB', border: '1px dashed var(--color-border)', borderRadius: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ width: '30px', height: '30px', border: '3px solid #ff7d0d', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                    Đang tải dữ liệu tệp tin...
+                                </div>
+                            ) : files.length > 0 ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                                     {files.map((file: any) => (
                                         <div key={file.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', cursor: file.data ? 'pointer' : 'default' }} onClick={() => file.data && setPreviewFile(file)}>
