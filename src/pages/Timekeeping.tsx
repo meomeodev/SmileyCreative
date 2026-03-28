@@ -116,11 +116,25 @@ export default function Timekeeping() {
                         setLocError(`Bạn đang ở ngoài vùng chấm công! Khoảng cách hiện tại: ${(distKm).toFixed(2)}km (Lớn hơn mức cho phép là ${systemConfig.radius}km).`);
                     }
                 },
-                (error) => {
+                (error: any) => {
                     setIsCheckingLoc(false);
-                    setLocError('Lỗi định vị: ' + error.message + ' - Vui lòng cấp quyền truy cập vị trí trên trình duyệt.');
+                    let errMsg = '';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errMsg = 'Trình duyệt HOẶC Hệ điều hành (Windows/Mac) đang chặn quyền vị trí của bạn. Hãy vào Cài đặt Máy tính -> Quyền riêng tư (Privacy) -> Bật Location.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errMsg = 'Không thể xác định vị trí hiện tại (Mất tín hiệu quét không gian).';
+                            break;
+                        case error.TIMEOUT:
+                            errMsg = 'Hệ thống định vị phản hồi quá chậm (Timeout). Vui lòng thử lại.';
+                            break;
+                        default:
+                            errMsg = 'Lỗi không xác định: ' + error.message;
+                    }
+                    setLocError('Cảnh báo: ' + errMsg);
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
             );
         } else if (action === 'out' && isCheckedIn) {
             const checkOutTime = new Date();
