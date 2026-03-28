@@ -120,13 +120,13 @@ export default function Timekeeping() {
                     setIsCheckingLoc(false);
                     let errMsg = '';
                     switch (error.code) {
-                        case error.PERMISSION_DENIED:
+                        case 1: // PERMISSION_DENIED
                             errMsg = 'Trình duyệt HOẶC Hệ điều hành (Windows/Mac) đang chặn quyền vị trí của bạn. Hãy vào Cài đặt Máy tính -> Quyền riêng tư (Privacy) -> Bật Location.';
                             break;
-                        case error.POSITION_UNAVAILABLE:
+                        case 2: // POSITION_UNAVAILABLE
                             errMsg = 'Không thể xác định vị trí hiện tại (Mất tín hiệu quét không gian).';
                             break;
-                        case error.TIMEOUT:
+                        case 3: // TIMEOUT
                             errMsg = 'Hệ thống định vị phản hồi quá chậm (Timeout). Vui lòng thử lại.';
                             break;
                         default:
