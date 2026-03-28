@@ -1,14 +1,20 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ProtectedRoute() {
-    // Kiểm tra xe người dùng đã được đánh dấu là đăng nhập hay chưa (lưu dưới LocalStorage)
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    const { currentUser, loading } = useAuth();
+    const location = useLocation();
 
-    // Nếu chưa đăng nhập, tự động đá về trang /login
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+    // Trong lúc đang parse Auth Firebase, AuthProvider đã render màn hình chờ.
+    // Nếu vẫn lọt vào đây (ví dụ loading = false) thì kiểm tra.
+    if (loading) {
+        return null;
     }
 
-    // Nếu đã đăng nhập, cho phép render các trang con bên trong (Dashboard, CRM, etc.)
+    // Nếu rỗng (chưa đăng nhập), điều hướng về trang Auth kèm theo URL đang cố truy cập (tùy chọn)
+    if (!currentUser) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
     return <Outlet />;
 }

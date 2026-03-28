@@ -65,9 +65,6 @@ export default function Auth() {
                 };
                 await setDoc(doc(db, 'users', user.uid), newUser);
 
-                // Lưu vào cache để App hoạt động
-                localStorage.setItem('isAuthenticated', 'true');
-                localStorage.setItem('currentUser', JSON.stringify(newUser));
                 navigate('/timekeeping');
             } catch (err: any) {
                 console.error(err);
@@ -89,9 +86,6 @@ export default function Auth() {
                 // Bốc hồ sơ từ Firestore
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    localStorage.setItem('isAuthenticated', 'true');
-                    localStorage.setItem('currentUser', JSON.stringify({ id: user.uid, ...userData }));
                     navigate('/timekeeping');
                 } else {
                     setError('Dữ liệu hồ sơ người dùng không tồn tại hoặc đã bị xóa.');

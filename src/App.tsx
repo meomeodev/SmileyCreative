@@ -11,10 +11,11 @@ import AIAssistant from './pages/AIAssistant';
 import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <>
+    <AuthProvider>
       <Routes>
       {/* Dynamic unified auth page handling both routes mapping cleanly */}
       <Route path="/register" element={<Auth />} />
@@ -67,7 +68,7 @@ function App() {
           },
         }}
       />
-    </>
+    </AuthProvider>
   );
 }
 

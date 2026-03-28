@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Bell, X, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Header() {
     const [showNotifications, setShowNotifications] = useState(false);
     const notificationsRef = useRef<HTMLDivElement>(null);
 
-    // Lấy thông tin user hiện tại
-    const currentUserStr = localStorage.getItem('currentUser');
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-    
+    const navigate = useNavigate();
+    const { currentUser, logout } = useAuth();
+
     // Fallback info
     const userName = currentUser?.name || 'Nhân viên';
     const userRole = currentUser?.department === 'sangtao' ? 'Khối Sáng tạo' :
@@ -18,6 +18,16 @@ export default function Header() {
                      currentUser?.department === 'khachhang' ? 'Khối Quản lý Khách hàng' :
                      currentUser?.department || 'Thành viên';
     const userAvatar = currentUser?.avatar || 'https://i.pravatar.cc/150?img=11';
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            // Optional: navigate('/login') not strictly needed if ProtectedRoute automatically bounces
+            navigate('/login');
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    };
 
     // Close when click outside
     useEffect(() => {
@@ -159,42 +169,64 @@ export default function Header() {
                     )}
                 </div>
 
-                <Link to="/settings" className="profile" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    paddingLeft: '1rem',
-                    borderLeft: '1px solid var(--color-border)',
-                    cursor: 'pointer',
-                    textDecoration: 'none',
-                    color: 'inherit'
-                }}>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{userName}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', textTransform: 'capitalize' }}>{userRole}</div>
-                    </div>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))',
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid var(--color-border)', paddingLeft: '1rem' }}>
+                    <Link to="/settings" className="profile hover-bg" style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        overflow: 'hidden',
-                        transition: 'transform 0.2s',
-                        fontSize: '1.2rem'
-                    }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                        {userAvatar.startsWith('http') || userAvatar.startsWith('data:') ? (
-                            <img src={userAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                            userAvatar
-                        )}
-                    </div>
-                </Link>
+                        gap: '0.75rem',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '8px'
+                    }}>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{userName}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', textTransform: 'capitalize' }}>{userRole}</div>
+                        </div>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--color-secondary), var(--color-primary))',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            overflow: 'hidden',
+                            transition: 'transform 0.2s',
+                            fontSize: '1.2rem'
+                        }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+                            {userAvatar.startsWith('http') || userAvatar.startsWith('data:') ? (
+                                <img src={userAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                userAvatar
+                            )}
+                        </div>
+                    </Link>
+
+                    <button
+                        onClick={handleLogout}
+                        className="action-btn hover-bg"
+                        title="Đăng xuất khỏi hệ thống"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-danger)',
+                            cursor: 'pointer',
+                            padding: '0.5rem',
+                            borderRadius: '50%',
+                            transition: 'backgrounds 0.2s'
+                        }}
+                    >
+                        <LogOut size={20} />
+                    </button>
+                </div>
             </div>
 
             <style>{`
