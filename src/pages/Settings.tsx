@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { User, Bell, Settings as SettingsIcon } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { db } from '../config/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export default function Settings() {
     const [activeTab, setActiveTab] = useState('profile');
@@ -66,22 +68,25 @@ export default function Settings() {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         // Mở rộng thông tin form kèm các id cũ
         const updatedUser = { ...currentUser, ...formData, department: formData.role };
         
         // Lưu cho phiên hiện tại
         setProfile(updatedUser);
         
-        // Đồng thời ghi lại thay đổi vào sổ users hệ thống để lần sau đăng nhập không bị mất
-        const usersStr = localStorage.getItem('app_users');
-        if (usersStr) {
-            let users = JSON.parse(usersStr);
-            users = users.map((u: any) => u.email === updatedUser.email ? updatedUser : u);
-            localStorage.setItem('app_users', JSON.stringify(users));
+        // Đồng thời ghi lại thay đổi vào sổ users hệ thống trên Firestore Cloud
+        if (currentUser?.id) {
+            try {
+                await updateDoc(doc(db, 'users', currentUser.id), updatedUser);
+                alert('Đã đồng bộ thay đổi hồ sơ thành công lên đám mây Smiley!');
+            } catch (error) {
+                console.error('Lỗi khi cập nhật hồ sơ Firestore:', error);
+                alert('Không thể kết nối máy chủ để lưu thay đổi. Vui lòng thử lại sau.');
+            }
+        } else {
+            alert('Lỗi: Hồ sơ này chưa được đồng bộ từ Cloud (Thiếu ID).');
         }
-        
-        alert('Đã lưu thay đổi hồ sơ thành công!');
     };
 
     const handleCancel = () => {

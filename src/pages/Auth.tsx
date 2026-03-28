@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, UserPlus, AlertCircle } from 'lucide-react';
+import { auth, db } from '../config/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function Auth() {
     const navigate = useNavigate();
@@ -37,64 +40,72 @@ export default function Auth() {
         navigate(isLoginMode ? '/register' : '/login');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        // 1. Fetch Users Database from LocalStorage (Mock DB)
-        const usersStr = localStorage.getItem('app_users');
-        const users = usersStr ? JSON.parse(usersStr) : [];
-
         if (!isLoginMode) {
             // REGISTRATION LOGIC
-            // Validate password match
             if (password !== confirmPassword) {
                 setError('Xác nhận mật khẩu không khớp. Vui lòng thử lại.');
                 return;
             }
 
-            // Check if email already exists
-            const existingUser = users.find((u: any) => u.email === email);
-            if (existingUser) {
-                setError('Địa chỉ Hộp thư này đã được đăng ký trên hệ thống.');
-                return;
-            }
-            
-            // Create user object and push to Mock DB
-            const newUser = { 
-                id: Date.now().toString(), 
-                name, 
-                department, 
-                email, 
-                password 
-            };
-            users.push(newUser);
-            localStorage.setItem('app_users', JSON.stringify(users));
+            try {
+                // Tạo tài khoản Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-            // Auto log in after successful registration
-            localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('currentUser', JSON.stringify(newUser));
-            navigate('/timekeeping');
+                // Tạo hồ sơ trên Firestore
+                const newUser = { 
+                    id: user.uid, 
+                    name, 
+                    department, 
+                    email 
+                };
+                await setDoc(doc(db, 'users', user.uid), newUser);
+
+                // Lưu vào cache để App hoạt động
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(newUser));
+                navigate('/timekeeping');
+            } catch (err: any) {
+                console.error(err);
+                if (err.code === 'auth/email-already-in-use') {
+                    setError('Địa chỉ Hộp thư này đã được đăng ký trên hệ thống.');
+                } else if (err.code === 'auth/weak-password') {
+                    setError('Mật khẩu quá yếu. Vui lòng nhập tối thiểu 6 ký tự.');
+                } else {
+                    setError('Đã xảy ra lỗi đăng ký: ' + err.message);
+                }
+            }
         } else {
             // LOGIN LOGIC
-            // Find user by email
-            const user = users.find((u: any) => u.email === email);
-            
-            if (!user) {
-                setError('Tài khoản không tồn tại. Vui lòng kiểm tra lại hộp thư.');
-                return;
-            }
+            try {
+                // Kiểm tra Auth
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-            // Verify password
-            if (user.password !== password) {
-                setError('Mật khẩu không chính xác.');
-                return;
+                // Bốc hồ sơ từ Firestore
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify({ id: user.uid, ...userData }));
+                    navigate('/timekeeping');
+                } else {
+                    setError('Dữ liệu hồ sơ người dùng không tồn tại hoặc đã bị xóa.');
+                }
+            } catch (err: any) {
+                console.error(err);
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                    setError('Email hoặc mật khẩu không chính xác.');
+                } else if (err.code === 'auth/too-many-requests') {
+                    setError('Mật khẩu sai nhiều lần. Tài khoản tạm khóa, vui lòng thử lại sau.');
+                } else {
+                    setError('Đã xảy ra lỗi đăng nhập: ' + err.message);
+                }
             }
-
-            // Login successful
-            localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            navigate('/timekeeping');
         }
     };
 
