@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, UserPlus, AlertCircle } from 'lucide-react';
 import { auth, db } from '../config/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 export default function Auth() {
     const navigate = useNavigate();
@@ -65,7 +66,14 @@ export default function Auth() {
                 };
                 await setDoc(doc(db, 'users', user.uid), newUser);
 
-                navigate('/timekeeping');
+                // Firebase tự động đăng nhập khi tạo tài khoản, ngắt kết nối ngay
+                await signOut(auth);
+
+                // Trả về màn hình đăng nhập
+                toast.success('Đăng ký thành công! Vui lòng đăng nhập để bắt đầu làm việc.', { duration: 4000 });
+                setPassword('');
+                setConfirmPassword('');
+                navigate('/login');
             } catch (err: any) {
                 console.error(err);
                 if (err.code === 'auth/email-already-in-use') {
