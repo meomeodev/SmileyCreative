@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { User, Bell, Settings as SettingsIcon } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { db } from '../config/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -21,10 +21,27 @@ export default function Settings() {
     };
 
     const [profile, setProfile] = useLocalStorage('currentUser', initialProfile);
-    const [systemConfig, setSystemConfig] = useLocalStorage('smiley_system_settings', { radius: 1, coords: '21.028511, 105.804817' });
+    const [systemConfig, setSystemConfig] = useState({ radius: 1, coords: '21.028511, 105.804817' });
     const [formData, setFormData] = useState(initialProfile);
     const [systemFormData, setSystemFormData] = useState(systemConfig);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Lấy config hệ thống từ Firebase
+    useEffect(() => {
+        const fetchSystemConfig = async () => {
+            try {
+                const docRef = doc(db, 'system_settings', 'config');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setSystemConfig(docSnap.data() as any);
+                    setSystemFormData(docSnap.data() as any);
+                }
+            } catch (err) {
+                console.error('Lỗi khi tải cấu hình hệ thống:', err);
+            }
+        };
+        fetchSystemConfig();
+    }, []);
 
     useEffect(() => {
         if (profile) {
@@ -38,8 +55,7 @@ export default function Settings() {
                 avatar: p.avatar || initialProfile.avatar
             });
         }
-        if (systemConfig) setSystemFormData(systemConfig);
-    }, [profile, systemConfig]);
+    }, [profile]);
 
     const avatarIcons = [
         { bg: '#FFE4D6', emoji: '😊', color: '#ff7d0d' },
@@ -340,9 +356,16 @@ export default function Settings() {
                                 <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
                                     <button 
                                         className="btn btn-primary" 
-                                        onClick={() => {
-                                            setSystemConfig(systemFormData);
-                                            toast.success('Đã lưu cấu hình hệ thống (Bán kính & Tọa độ)!');
+                                        onClick={async () => {
+                                            toast.loading('Đang lưu cấu hình...', { id: 'save-sys' });
+                                            try {
+                                                await setDoc(doc(db, 'system_settings', 'config'), systemFormData);
+                                                setSystemConfig(systemFormData);
+                                                toast.success('Đã lưu cấu hình hệ thống (Bán kính & Tọa độ) lên Cloud!', { id: 'save-sys' });
+                                            } catch (err: any) {
+                                                console.error(err);
+                                                toast.error('Lỗi lưu cấu hình: ' + err.message, { id: 'save-sys' });
+                                            }
                                         }}
                                         style={{ padding: '0.75rem 2rem', borderRadius: '2rem', fontWeight: 600, backgroundColor: '#ff7d0d', color: 'white', border: 'none', cursor: 'pointer' }}
                                     >

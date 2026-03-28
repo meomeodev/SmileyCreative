@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LogIn, LogOut, Download, Clock, Calendar, ChevronDown, Monitor, Search, AlertCircle } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { db } from '../config/firebase';
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function Timekeeping() {
@@ -88,9 +87,24 @@ export default function Timekeeping() {
         return () => clearInterval(timer);
     }, [isCheckedIn, checkInTime]);
 
-    const [systemConfig] = useLocalStorage('smiley_system_settings', { radius: 1, coords: '21.028511, 105.804817' });
+    const [systemConfig, setSystemConfig] = useState({ radius: 1, coords: '21.028511, 105.804817' });
     const [isCheckingLoc, setIsCheckingLoc] = useState(false);
     const [locError, setLocError] = useState('');
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const docRef = doc(db, 'system_settings', 'config');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setSystemConfig(docSnap.data() as any);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải cấu hình chấm công:", error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     // Haversine formula
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
