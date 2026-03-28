@@ -3,6 +3,7 @@ import { Search, Bell, Plus, Filter, MoreVertical, LayoutGrid, List, CheckSquare
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import PageTransition from '../components/PageTransition';
 
 
 
@@ -257,7 +258,7 @@ export default function Projects() {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--color-surface)' }}>
+        <PageTransition style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--color-surface)' }}>
 
             {/* Top Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid var(--color-border)' }}>
@@ -636,7 +637,7 @@ export default function Projects() {
                     </div>
                 </div>
             )}
-        </div>
+        </PageTransition>
     );
 }
 

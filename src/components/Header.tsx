@@ -93,7 +93,7 @@ export default function Header() {
                 {/* Notifications Dropdown Wrapper */}
                 <div ref={notificationsRef} style={{ position: 'relative' }}>
                     <button
-                        className="action-btn"
+                        className="action-btn hover-lift active-bounce"
                         onClick={() => setShowNotifications(!showNotifications)}
                         style={{
                             width: '40px',
@@ -170,7 +170,7 @@ export default function Header() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid var(--color-border)', paddingLeft: '1rem' }}>
-                    <Link to="/settings" className="profile hover-bg" style={{
+                    <Link to="/settings" className="profile hover-lift active-bounce glass-hover" style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.75rem',
@@ -209,7 +209,7 @@ export default function Header() {
 
                     <button
                         onClick={handleLogout}
-                        className="action-btn hover-bg"
+                        className="action-btn hover-lift active-bounce"
                         title="Đăng xuất khỏi hệ thống"
                         style={{
                             display: 'flex',

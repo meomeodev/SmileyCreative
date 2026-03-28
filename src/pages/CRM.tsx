@@ -3,6 +3,7 @@ import { Search, Plus, Filter, Phone, Mail, MapPin, Star, User, X, Edit, Trash2 
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import PageTransition from '../components/PageTransition';
 
 const COLORS = ['var(--color-primary)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-secondary)', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -104,7 +105,7 @@ export default function CRM() {
     );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
+        <PageTransition style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -303,6 +304,6 @@ export default function CRM() {
             <style>{`
         .client-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border-color: var(--color-primary); }
       `}</style>
-        </div>
+        </PageTransition>
     );
 }

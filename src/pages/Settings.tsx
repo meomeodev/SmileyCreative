@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import PageTransition from '../components/PageTransition';
 
 export default function Settings() {
     const [activeTab, setActiveTab] = useState('profile');
@@ -104,7 +105,7 @@ export default function Settings() {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <PageTransition style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <div>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem', letterSpacing: '-0.5px' }}>Cài đặt Hệ thống</h2>
                 <p style={{ color: 'var(--color-text-light)', fontSize: '0.95rem' }}>Quản lý hồ sơ cá nhân và cấu hình vận hành của Smiley Agency.</p>
@@ -370,6 +371,6 @@ export default function Settings() {
                     )}
                 </div>
             </div>
-        </div>
+        </PageTransition>
     );
 }

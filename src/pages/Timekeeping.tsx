@@ -3,6 +3,7 @@ import { LogIn, LogOut, Download, Clock, Calendar, ChevronDown, Monitor, Search,
 import { db } from '../config/firebase';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import PageTransition from '../components/PageTransition';
 
 export default function Timekeeping() {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -249,7 +250,7 @@ export default function Timekeeping() {
     const statusObj = getCheckInStatus();
 
     return (
-        <div className="timekeeping-container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <PageTransition className="timekeeping-container" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
             {/* Header section */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -492,6 +493,6 @@ export default function Timekeeping() {
                 </div>
             </div>
 
-        </div>
+        </PageTransition>
     );
 }

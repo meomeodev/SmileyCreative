@@ -68,7 +68,7 @@ export default function Sidebar() {
                             transition: 'all var(--transition-fast)',
                             textDecoration: 'none'
                         })}
-                        className={({ isActive }) => isActive ? 'active-nav' : 'hover-nav'}
+                        className={({ isActive }) => isActive ? 'active-nav menu-item-transition hover-lift active-bounce' : 'hover-nav menu-item-transition hover-lift active-bounce'}
                     >
                         <item.icon size={20} />
                         <span>{item.label}</span>
@@ -85,7 +85,7 @@ export default function Sidebar() {
                         fontWeight: 500, color: 'white',
                         background: 'linear-gradient(135deg, var(--color-primary), #818CF8)', border: 'none'
                     }}
-                    className="btn"
+                    className="btn hover-lift active-bounce glass-hover"
                 >
                     ✨ Trợ lý AI
                 </NavLink>
@@ -104,7 +104,7 @@ export default function Sidebar() {
                         transition: 'all var(--transition-fast)',
                         textDecoration: 'none'
                     })}
-                    className={({ isActive }) => isActive ? 'active-nav' : 'hover-nav'}
+                    className={({ isActive }) => isActive ? 'active-nav menu-item-transition hover-lift active-bounce' : 'hover-nav menu-item-transition hover-lift active-bounce'}
                 >
                     <Settings size={20} />
                     <span>Cài đặt</span>
@@ -133,7 +133,7 @@ export default function Sidebar() {
                         fontSize: '1rem',
                         marginTop: '0.5rem'
                     }}
-                    className="hover-nav"
+                    className="hover-nav menu-item-transition hover-lift active-bounce"
                 >
                     <LogOut size={20} />
                     <span>Đăng xuất</span>

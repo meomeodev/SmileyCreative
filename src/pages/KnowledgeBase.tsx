@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ThumbsUp, MessageSquare, Share2, Image as ImageIcon, Video, Link as LinkIcon, Send, Smile, X } from 'lucide-react';
+import PageTransition from '../components/PageTransition';
 
 type Comment = {
     id: number;
@@ -183,7 +184,7 @@ export default function KnowledgeBase() {
     };
 
     return (
-        <div style={{ display: 'flex', gap: '2rem', height: '100%' }}>
+        <PageTransition style={{ display: 'flex', gap: '2rem', height: '100%' }}>
 
             {/* Main Feed */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '0 auto', overflowY: 'auto', paddingRight: '0.5rem' }}>
@@ -490,6 +491,6 @@ export default function KnowledgeBase() {
         .post-action-btn:hover { background: rgba(128, 128, 128, 0.1); }
         .hover-text-primary:hover { color: var(--color-primary) !important; text-decoration: underline; }
       `}</style>
-        </div>
+        </PageTransition>
     );
 }

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Timekeeping from './pages/Timekeeping';
@@ -12,30 +12,34 @@ import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { AnimatePresence } from 'framer-motion';
 
 function App() {
+  const location = useLocation();
   return (
     <AuthProvider>
-      <Routes>
-      {/* Dynamic unified auth page handling both routes mapping cleanly */}
-      <Route path="/register" element={<Auth />} />
-      <Route path="/login" element={<Auth />} />
-      
-      {/* Route bảo vệ yêu cầu đăng nhập */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Navigate to="/timekeeping" replace />} />
-          <Route path="timekeeping" element={<Timekeeping />} />
-          <Route path="employees" element={<Employees />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="crm" element={<CRM />} />
-          <Route path="knowledge" element={<KnowledgeBase />} />
-          <Route path="chat" element={<Chat />} />
-          <Route path="ai-assistant" element={<AIAssistant />} />
-          <Route path="settings" element={<Settings />} />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+        {/* Dynamic unified auth page handling both routes mapping cleanly */}
+        <Route path="/register" element={<Auth />} />
+        <Route path="/login" element={<Auth />} />
+        
+        {/* Route bảo vệ yêu cầu đăng nhập */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Navigate to="/timekeeping" replace />} />
+            <Route path="timekeeping" element={<Timekeeping />} />
+            <Route path="employees" element={<Employees />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="crm" element={<CRM />} />
+            <Route path="knowledge" element={<KnowledgeBase />} />
+            <Route path="chat" element={<Chat />} />
+            <Route path="ai-assistant" element={<AIAssistant />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
         </Route>
-      </Route>
-      </Routes>
+        </Routes>
+      </AnimatePresence>
       
       <Toaster 
         position="top-center"

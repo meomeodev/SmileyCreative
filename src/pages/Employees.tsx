@@ -3,6 +3,7 @@ import { Search, Filter, Plus, MoreHorizontal, Mail, Phone, Briefcase, MapPin, X
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
 import { collection, query, getDocs, setDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import PageTransition from '../components/PageTransition';
 
 export default function Employees() {
     const [employees, setEmployees] = useState<any[]>([]);
@@ -64,7 +65,7 @@ export default function Employees() {
     });
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
+        <PageTransition style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.5rem' }}>
@@ -383,6 +384,6 @@ export default function Employees() {
           .table-row:hover { background-color: rgba(255,255,255,0.02); }
         }
       `}</style>
-        </div>
+        </PageTransition>
     );
 }

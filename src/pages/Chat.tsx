@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Send, Phone, Video, MoreVertical, Image as ImageIcon, Paperclip, Smile } from 'lucide-react';
+import PageTransition from '../components/PageTransition';
 
 const mockChats = [
     { id: 1, name: 'Phòng Phát triển Sản phẩm', lastMsg: 'Anh push code lên nhánh dev rồi nhé', time: '10:30', unread: 2, avatar: 'https://i.pravatar.cc/150?img=1', isGroup: true },
@@ -57,7 +58,7 @@ export default function Chat() {
     const currentMessages = messagesByChat[activeChat.id] || [];
 
     return (
-        <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - var(--header-height) - 7rem)', margin: '-1rem' }}>
+        <PageTransition style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - var(--header-height) - 7rem)', margin: '-1rem' }}>
 
             {/* Sidebar - Chat List */}
             <div style={{ width: '320px', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
@@ -177,6 +178,6 @@ export default function Chat() {
           .chat-item:hover { background: rgba(255,255,255,0.02) !important; }
         }
       `}</style>
-        </div>
+        </PageTransition>
     );
 }

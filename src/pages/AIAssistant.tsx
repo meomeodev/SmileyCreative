@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Sparkles, Bot, User } from 'lucide-react';
+import PageTransition from '../components/PageTransition';
 
 export default function AIAssistant() {
     const [messages, setMessages] = useState([
@@ -23,7 +24,7 @@ export default function AIAssistant() {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--header-height) - 5rem)', maxWidth: '900px', margin: '0 auto', gap: '1.5rem' }}>
+        <PageTransition style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--header-height) - 5rem)', maxWidth: '900px', margin: '0 auto', gap: '1.5rem' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
@@ -124,6 +125,6 @@ export default function AIAssistant() {
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
       `}</style>
-        </div>
+        </PageTransition>
     );
 }
