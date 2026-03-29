@@ -57,7 +57,7 @@ export default function Auth() {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Tạo hồ sơ trên Firestore
+                // Tạo hồ sơ trên Firestore (Tài khoản hệ thống)
                 const newUser = { 
                     id: user.uid, 
                     name, 
@@ -65,6 +65,25 @@ export default function Auth() {
                     email 
                 };
                 await setDoc(doc(db, 'users', user.uid), newUser);
+
+                // Tự động đẩy vào bảng Danh sách Nhân sự (Giao diện Quản lý)
+                let mappedDept = 'NHÂN VIÊN';
+                if (department === 'giamdoc') mappedDept = 'GIÁM ĐỐC';
+                if (department === 'truongphong') mappedDept = 'TRƯỞNG PHÒNG';
+                
+                const newEmployee = {
+                    id: user.uid,
+                    name,
+                    email,
+                    department: mappedDept,
+                    role: 'Chưa cập nhật',
+                    location: 'Hà Nội, Việt Nam',
+                    phone: '',
+                    status: 'Active',
+                    statusColor: '#10b981',
+                    avatar: `https://i.pravatar.cc/150?u=${user.uid}`
+                };
+                await setDoc(doc(db, 'employees', user.uid), newEmployee);
 
                 // Firebase tự động đăng nhập khi tạo tài khoản, ngắt kết nối ngay
                 await signOut(auth);
