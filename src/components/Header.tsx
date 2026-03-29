@@ -88,7 +88,7 @@ export default function Header() {
                                     text: `Công việc "${task.title}" đã quá thời gian hoàn thành!`,
                                     time: new Date().toISOString(),
                                     isNew: true,
-                                    link: `/projects`
+                                    link: `/projects/${task.projectId || ''}`
                                 });
                             } catch(e) {}
                         }
