@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Plus, Filter, MoreVertical, LayoutGrid, List, CheckSquare, Calendar, Folder, X, Edit, Trash2, ArrowLeft, File } from 'lucide-react';
+import { Search, Bell, Plus, Filter, MoreVertical, LayoutGrid, CheckSquare, Calendar, Folder, X, Edit, Trash2, ArrowLeft, File, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { db } from '../../config/firebase';
+import { db, storage } from '../../config/firebase';
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc, where } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
 
 export default function ProjectDetail({ project, onBack }: { project: any, onBack: () => void }) {
@@ -50,40 +51,21 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
             const uploadedFiles = Array.from(e.target.files);
             
             try {
-                const filePromises = uploadedFiles.map(f => {
-                    return new Promise<any>((resolve) => {
-                        const isImage = f.type.startsWith('image/');
-                        const isSmallEnoughForStorage = f.size < 3 * 1024 * 1024; // 3MB limit
-                        
-                        if (isImage && isSmallEnoughForStorage) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                resolve({
-                                    projectId: String(project.id),
-                                    name: f.name,
-                                    size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
-                                    type: f.type || 'Không xác định',
-                                    date: new Date().toLocaleDateString('vi-VN'),
-                                    data: event.target?.result // Base64 string
-                                });
-                            };
-                            reader.readAsDataURL(f);
-                        } else {
-                            resolve({
-                                projectId: String(project.id),
-                                name: f.name,
-                                size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
-                                type: f.type || 'Không xác định',
-                                date: new Date().toLocaleDateString('vi-VN'),
-                                data: null
-                            });
-                        }
-                    });
-                });
-
-                const newFilesData = await Promise.all(filePromises);
                 const successfulFiles = [];
-                for (const fileData of newFilesData) {
+                for (const f of uploadedFiles) {
+                    const fileRef = ref(storage, `projects/${project.id}/${Date.now()}_${f.name}`);
+                    const uploadTask = await uploadBytesResumable(fileRef, f);
+                    const downloadURL = await getDownloadURL(uploadTask.ref);
+                    
+                    const fileData = {
+                        projectId: String(project.id),
+                        name: f.name,
+                        size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
+                        type: f.type || 'Không xác định',
+                        date: new Date().toLocaleDateString('vi-VN'),
+                        data: downloadURL,
+                        storagePath: uploadTask.ref.fullPath
+                    };
                     const docRef = await addDoc(collection(db, 'project_files'), fileData);
                     successfulFiles.push({ id: docRef.id, ...fileData });
                 }
@@ -98,10 +80,14 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
         }
     };
 
-    const handleDeleteFile = async (id: string) => {
+    const handleDeleteFile = async (id: string, storagePath?: string) => {
         if (confirm('Bạn có chắc chắn muốn xóa tệp này trên Cloud?')) {
             toast.loading('Đang xóa...', { id: 'del-file' });
             try {
+                if (storagePath) {
+                    const fileRef = ref(storage, storagePath);
+                    await deleteObject(fileRef).catch(e => console.error("Lỗi xóa file kho lưu trữ:", e));
+                }
                 await deleteDoc(doc(db, 'project_files', id));
                 setFiles(files.filter((f: any) => f.id !== id));
                 toast.success('Đã xóa tệp', { id: 'del-file' });
@@ -478,12 +464,19 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                             ) : files.length > 0 ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                                     {files.map((file: any) => (
-                                        <div key={file.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', cursor: file.data ? 'pointer' : 'default' }} onClick={() => file.data && setPreviewFile(file)}>
+                                        <div key={file.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', border: '1px solid var(--color-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', cursor: file.data ? 'pointer' : 'default' }} onClick={() => { if(file.data && file.type?.startsWith('image/')) setPreviewFile(file); }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                                                {file.data ? <img src={file.data} alt="Preview" style={{ width: '48px', height: '48px', borderRadius: '0.5rem', objectFit: 'cover' }} /> : <div style={{ backgroundColor: '#F3F4F6', padding: '0.75rem', borderRadius: '0.5rem', color: '#ff7d0d', display: 'flex' }}><File size={24}/></div>}
+                                                {file.data && file.type?.startsWith('image/') ? <img src={file.data} alt="Preview" style={{ width: '48px', height: '48px', borderRadius: '0.5rem', objectFit: 'cover' }} /> : <div style={{ backgroundColor: '#F3F4F6', padding: '0.75rem', borderRadius: '0.5rem', color: '#ff7d0d', display: 'flex' }}><File size={24}/></div>}
                                                 <div style={{ overflow: 'hidden' }}><div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)' }}>{file.name}</div><div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginTop: '0.2rem' }}>{file.size}</div></div>
                                             </div>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id); }} style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0.5rem' }} title="Xóa tệp"><Trash2 size={16} /></button>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                {file.data && (
+                                                    <a href={file.data} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', padding: '0.5rem', textDecoration: 'none' }} title="Tải xuống / Xem">
+                                                        <Download size={16} />
+                                                    </a>
+                                                )}
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id, file.storagePath); }} style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0.5rem' }} title="Xóa tệp"><Trash2 size={16} /></button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
