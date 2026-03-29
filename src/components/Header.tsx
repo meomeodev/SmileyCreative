@@ -3,7 +3,7 @@ import { Search, Bell, X, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
-import { collection, query, where, onSnapshot, updateDoc, doc, writeBatch, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, writeBatch, addDoc, runTransaction } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function Header() {
@@ -66,28 +66,32 @@ export default function Header() {
 
         const fireAlarm = async (task: any) => {
             try {
-                // Đánh dấu đã báo để tránh spam nhiều lần hoặc spam bởi nhiều máy khách
-                await updateDoc(doc(db, 'project_tasks', task.id), { notifiedPassed: true });
+                const taskRef = doc(db, 'project_tasks', task.id);
+                // Dùng transaction để đảm bảo chỉ có 1 client duy nhất tạo thông báo
+                const shouldNotify = await runTransaction(db, async (transaction) => {
+                    const taskDoc = await transaction.get(taskRef);
+                    if (!taskDoc.exists() || taskDoc.data().notifiedPassed) {
+                        return false;
+                    }
+                    transaction.update(taskRef, { notifiedPassed: true });
+                    return true;
+                });
                 
-                // Hiển thị Popup Toast rung chông giật gân (chỉ hiển thị cho mình nếu mình có liên quan)
-                const amIAssigned = task.assignees?.some((a: any) => String(a.id) === String(currentUser.uid));
-                if (amIAssigned || currentUser?.department === 'giamdoc') {
-                    toast.error(`⏰ BÁO ĐỘNG: Công việc "${task.title}" ĐÃ QUÁ HẠN CHÓT!`, { duration: 10000, position: 'top-center' });
-                }
-                
-                // Gửi Notification Panel cho toàn bộ những người có liên quan (Chỉ người chạy fireAlarm đầu tiên mới addDoc để giảm trùng lặp)
-                if (task.assignees && task.assignees.length > 0) {
-                    for (const assignee of task.assignees) {
-                        try {
-                            await addDoc(collection(db, 'notifications'), {
-                                userId: String(assignee.id),
-                                title: '⏰ Báo động Hạn chót',
-                                text: `Công việc "${task.title}" đã quá thời gian hoàn thành!`,
-                                time: new Date().toISOString(),
-                                isNew: true,
-                                link: `/projects`
-                            });
-                        } catch(e) {}
+                if (shouldNotify) {
+                    // Gửi Notification Panel cho toàn bộ những người có liên quan
+                    if (task.assignees && task.assignees.length > 0) {
+                        for (const assignee of task.assignees) {
+                            try {
+                                await addDoc(collection(db, 'notifications'), {
+                                    userId: String(assignee.id),
+                                    title: '⏰ Báo động Hạn chót',
+                                    text: `Công việc "${task.title}" đã quá thời gian hoàn thành!`,
+                                    time: new Date().toISOString(),
+                                    isNew: true,
+                                    link: `/projects`
+                                });
+                            } catch(e) {}
+                        }
                     }
                 }
             } catch(e) {
@@ -109,25 +113,33 @@ export default function Header() {
                     return;
                 }
 
-                // Ta để máy khách tự do check. FireAlarm có updateDoc nên sẽ lock cho lần sau.
-                // Lưu ý: Nếu một task không được assign cho ai, Giám đốc online vẫn có thể trigger fireAlarm
+                // Bất kỳ client nào cũng tham gia đánh giá để giúp những người offline vẫn nhận được thông báo
+                // Tuy nhiên chỉ báo Toast cho những người dùng liên quan
                 const amIAssigned = task.assignees?.some((a: any) => String(a.id) === String(currentUser.uid));
                 const isDirector = currentUser?.department === 'giamdoc';
-                if (!amIAssigned && !isDirector) return;
 
                 const deadlineDate = new Date(task.deadline);
                 const now = new Date();
                 const msUntilDeadline = deadlineDate.getTime() - now.getTime();
 
+                const triggerLocalToastAndFireAlarm = () => {
+                     // Nếu mình có liên quan thì hiện Toast
+                     if (amIAssigned || isDirector) {
+                         toast.error(`⏰ BÁO ĐỘNG: Công việc "${task.title}" ĐÃ QUÁ HẠN CHÓT!`, { duration: 10000, position: 'top-center' });
+                     }
+                     // Chạy background FireAlarm để tạo Notification Panel cho người liên quan (đã chặn trùng trong code của fireAlarm)
+                     fireAlarm(task);
+                };
+
                 // Nếu thời gian đã lố (hoặc chạm ngưỡng) -> Pinging alarm!
                 if (msUntilDeadline <= 0) {
-                    fireAlarm(task);
+                    triggerLocalToastAndFireAlarm();
                 } else if (msUntilDeadline <= 24 * 60 * 60 * 1000) {
                     // Nếu thời gian còn lại dưới 24 giờ, thì cài báo thức (setTimeout)
                     // (setTimeout trong JS chạy quá giới hạn 32 bit int (~24 ngày) sẽ bị lỗi tức thời, nên ta giới hạn quét 24 giờ)
                     if (!alarmTimersRef.current[task.id]) {
                         alarmTimersRef.current[task.id] = setTimeout(() => {
-                            fireAlarm(task);
+                            triggerLocalToastAndFireAlarm();
                         }, msUntilDeadline);
                     }
                 }
