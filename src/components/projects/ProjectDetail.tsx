@@ -500,6 +500,10 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                                         type="datetime-local" 
                                                         style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10, left: 0, top: 0 }}
                                                         value={task.deadline || ''}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            try { if ('showPicker' in HTMLInputElement.prototype) (e.target as HTMLInputElement).showPicker(); } catch(err){}
+                                                        }}
                                                         onChange={(e) => handleInlineUpdate(task, 'deadline', e.target.value)}
                                                     />
                                                 </label>
@@ -511,6 +515,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                                     <select 
                                                         style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', left: 0, top: 0, cursor: 'pointer', zIndex: 10 }}
                                                         value={task.status}
+                                                        onClick={e => e.stopPropagation()}
                                                         onChange={(e) => handleInlineUpdate(task, 'status', e.target.value)}
                                                     >
                                                         <option value="CHƯA BẮT ĐẦU">CHƯA BẮT ĐẦU</option>
