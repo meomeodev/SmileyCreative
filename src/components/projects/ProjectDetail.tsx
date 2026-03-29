@@ -285,7 +285,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                 <div style={{ display: 'flex' }}>
                     {[
                         { id: 'Chế độ Bảng', icon: LayoutGrid }, { id: 'Phân công', icon: CheckSquare },
-                        { id: 'Danh sách', icon: List }, { id: 'Tiến độ', icon: Calendar }, { id: 'Tài liệu', icon: Folder }
+                        { id: 'Tiến độ', icon: Calendar }, { id: 'Tài liệu', icon: Folder }
                     ].map(tab => (
                         <button
                             key={tab.id}
