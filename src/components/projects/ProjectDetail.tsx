@@ -4,18 +4,11 @@ import toast from 'react-hot-toast';
 import { db } from '../../config/firebase';
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc, where } from 'firebase/firestore';
 
-const INITIAL_TEAM = [
-    { id: 1, name: 'Julian Peters', role: 'Creative Director', avatar: 'https://i.pravatar.cc/150?img=15', locked: false },
-    { id: 2, name: 'Quốc Huy', role: 'Video Editor', avatar: 'https://i.pravatar.cc/150?img=11', locked: false },
-    { id: 3, name: 'Minh Anh', role: 'Account Manager', avatar: 'https://i.pravatar.cc/150?img=5', locked: false },
-    { id: 4, name: 'Hoàng Nam', role: 'Graphic Designer', avatar: 'https://i.pravatar.cc/150?img=8', locked: false },
-    { id: 5, name: 'Thùy Linh', role: 'Content Writer', avatar: '', locked: true }, 
-];
 
 export default function ProjectDetail({ project, onBack }: { project: any, onBack: () => void }) {
     const [activeTab, setActiveTab] = useState('Phân công');
     const [tasks, setTasks] = useState<any[]>([]);
-    const [team, setTeam] = useState<any[]>(INITIAL_TEAM);
+    const [team, setTeam] = useState<any[]>([]);
     const [files, setFiles] = useState<any[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,10 +24,10 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                 setTasks(tasksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 
                 // Load Team (Global)
-                const teamQ = query(collection(db, 'project_team'));
+                const teamQ = query(collection(db, 'employees'));
                 const teamSnap = await getDocs(teamQ);
                 const fetchedTeam = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (fetchedTeam.length > 0) setTeam(fetchedTeam);
+                setTeam(fetchedTeam);
 
                 // Load Files
                 const filesQ = query(collection(db, 'project_files'), where('projectId', '==', String(project.id)));
