@@ -163,6 +163,37 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault(); // allow dropping
     };
+    
+    const handleInlineUpdate = async (task: any, field: string, value: string) => {
+        let updateData: any = { [field]: value };
+        if (field === 'status') {
+             let statusColor = '#F59E0B'; // CHƯA BẮT ĐẦU
+             if (value === 'ĐANG LÀM') statusColor = '#ff7d0d';
+             if (value === 'HOÀN THÀNH') statusColor = '#10B981';
+             if (value === 'NHÁP') statusColor = '#6B7280';
+             updateData.statusColor = statusColor;
+        }
+
+        try {
+            await updateDoc(doc(db, 'project_tasks', String(task.id)), updateData);
+            setTasks(tasks.map((t: any) => t.id === task.id ? { ...t, ...updateData } : t));
+            
+            if (field === 'deadline' && task.assignees && task.assignees.length > 0) {
+                 for (const assignee of task.assignees) {
+                     await addDoc(collection(db, 'notifications'), {
+                         userId: String(assignee.id),
+                         title: 'Hạn chót công việc',
+                         text: `Dự án ${project?.name || ''}: Task "${task.title}" vừa đổi hạn chót thành ${formatDeadline(value)}`,
+                         time: new Date().toISOString(),
+                         isNew: true,
+                         link: `/projects/${project?.id || ''}`
+                     });
+                 }
+            }
+        } catch (err: any) {
+            toast.error('Lỗi: ' + err.message);
+        }
+    };
 
     const openModal = (task: any = null) => {
         setEditingTask(task);
@@ -463,11 +494,31 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-light)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Hạn chót</div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}><Calendar size={14} color="var(--color-danger)" /> {formatDeadline(task.deadline)}</div>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', position: 'relative' }} title="Nhấn để đổi Hạn chót">
+                                                    <Calendar size={14} color="var(--color-danger)" /> {formatDeadline(task.deadline)}
+                                                    <input 
+                                                        type="datetime-local" 
+                                                        style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10, left: 0, top: 0 }}
+                                                        value={task.deadline || ''}
+                                                        onChange={(e) => handleInlineUpdate(task, 'deadline', e.target.value)}
+                                                    />
+                                                </label>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
                                                 <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-light)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Trạng thái</div>
-                                                <span style={{ color: task.statusColor, fontWeight: 800, fontSize: '0.75rem' }}>{task.status}</span>
+                                                <div style={{ position: 'relative', display: 'inline-block' }} title="Nhấn để đổi Trạng thái">
+                                                    <span style={{ color: task.statusColor, fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>{task.status} <span style={{fontSize: '0.6rem'}}>▼</span></span>
+                                                    <select 
+                                                        style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', left: 0, top: 0, cursor: 'pointer', zIndex: 10 }}
+                                                        value={task.status}
+                                                        onChange={(e) => handleInlineUpdate(task, 'status', e.target.value)}
+                                                    >
+                                                        <option value="CHƯA BẮT ĐẦU">CHƯA BẮT ĐẦU</option>
+                                                        <option value="NHÁP">NHÁP</option>
+                                                        <option value="ĐANG LÀM">ĐANG LÀM</option>
+                                                        <option value="HOÀN THÀNH">HOÀN THÀNH</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
