@@ -126,6 +126,13 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
         return dl;
     };
 
+    const renderDeadlineText = (task: any) => {
+        const text = formatDeadline(task.deadline);
+        if (!task.deadline || task.status === 'HOÀN THÀNH') return <span>{text}</span>;
+        const isOverdue = new Date(task.deadline).getTime() < new Date().getTime();
+        return isOverdue ? <span style={{ color: '#EF4444', fontWeight: 800 }}>{text} (QUÁ HẠN)</span> : <span>{text}</span>;
+    };
+
     const handleDrop = async (e: React.DragEvent, taskId: string) => {
         e.preventDefault();
         const memberId = e.dataTransfer.getData('memberId');
@@ -172,6 +179,8 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
              if (value === 'HOÀN THÀNH') statusColor = '#10B981';
              if (value === 'NHÁP') statusColor = '#6B7280';
              updateData.statusColor = statusColor;
+        } else if (field === 'deadline') {
+             updateData.notifiedPassed = false;
         }
 
         try {
@@ -241,7 +250,9 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
         toast.loading('Đang lưu công việc...', { id: 'save-task' });
         try {
             if (editingTask) {
-                const updateData = { ...formData, typeColor, statusColor };
+                const updateData: any = { ...formData, typeColor, statusColor };
+                if (editingTask.deadline !== formData.deadline) updateData.notifiedPassed = false;
+                
                 await updateDoc(doc(db, 'project_tasks', String(editingTask.id)), updateData);
                 setTasks(tasks.map((t: any) => t.id === editingTask.id ? { ...t, ...updateData } : t));
                 toast.success('Cập nhật thành công', { id: 'save-task' });
@@ -270,7 +281,8 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                     projectId: String(project.id),
                     typeColor,
                     statusColor,
-                    assignees: [] // Default empty when created
+                    assignees: [], // Default empty when created
+                    notifiedPassed: false
                 };
                 const docRef = await addDoc(collection(db, 'project_tasks'), newTaskData);
                 setTasks([...tasks, { id: docRef.id, ...newTaskData }]);
@@ -429,7 +441,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem', textAlign: 'center', color: task.deadline ? 'var(--color-text)' : 'var(--color-text-light)', fontSize: '0.9rem', fontWeight: 500 }}>
-                                                {formatDeadline(task.deadline)}
+                                                {renderDeadlineText(task)}
                                             </td>
                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                 <span style={{ backgroundColor: `${task.statusColor}15`, color: task.statusColor, padding: '0.3rem 0.8rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{task.status}</span>
@@ -495,7 +507,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                             <div>
                                                 <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-light)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Hạn chót</div>
                                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', position: 'relative' }} title="Nhấn để đổi Hạn chót">
-                                                    <Calendar size={14} color="var(--color-danger)" /> {formatDeadline(task.deadline)}
+                                                    <Calendar size={14} color="var(--color-danger)" /> {renderDeadlineText(task)}
                                                     <input 
                                                         type="datetime-local" 
                                                         style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10, left: 0, top: 0 }}

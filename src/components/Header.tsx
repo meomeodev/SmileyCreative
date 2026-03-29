@@ -66,20 +66,23 @@ export default function Header() {
 
         const fireAlarm = async (task: any) => {
             try {
-                // Hiển thị Popup Toast rung chông giật gân
-                toast.error(`⏰ BÁO ĐỘNG: Công việc "${task.title}" ĐÃ ĐẾN HẠN CHÓT!`, { duration: 8000, position: 'top-center' });
-                
-                // Đánh dấu đã báo để tránh spam nhiều lần hoặc spam máy người khác
+                // Đánh dấu đã báo để tránh spam nhiều lần hoặc spam bởi nhiều máy khách
                 await updateDoc(doc(db, 'project_tasks', task.id), { notifiedPassed: true });
                 
-                // Gửi Notification Panel cho toàn bộ những người có liên quan
+                // Hiển thị Popup Toast rung chông giật gân (chỉ hiển thị cho mình nếu mình có liên quan)
+                const amIAssigned = task.assignees?.some((a: any) => String(a.id) === String(currentUser.uid));
+                if (amIAssigned || currentUser?.department === 'giamdoc') {
+                    toast.error(`⏰ BÁO ĐỘNG: Công việc "${task.title}" ĐÃ QUÁ HẠN CHÓT!`, { duration: 10000, position: 'top-center' });
+                }
+                
+                // Gửi Notification Panel cho toàn bộ những người có liên quan (Chỉ người chạy fireAlarm đầu tiên mới addDoc để giảm trùng lặp)
                 if (task.assignees && task.assignees.length > 0) {
                     for (const assignee of task.assignees) {
                         try {
                             await addDoc(collection(db, 'notifications'), {
                                 userId: String(assignee.id),
                                 title: '⏰ Báo động Hạn chót',
-                                text: `Công việc "${task.title}" thuộc dự án của bạn đã quá thời gian cho phép hoàn thành!`,
+                                text: `Công việc "${task.title}" đã quá thời gian hoàn thành!`,
                                 time: new Date().toISOString(),
                                 isNew: true,
                                 link: `/projects`
@@ -106,9 +109,11 @@ export default function Header() {
                     return;
                 }
 
-                // Chỉ những người được giao hoặc liên quan mới chịu trách nhiệm canh đồng hồ (giảm tải)
+                // Ta để máy khách tự do check. FireAlarm có updateDoc nên sẽ lock cho lần sau.
+                // Lưu ý: Nếu một task không được assign cho ai, Giám đốc online vẫn có thể trigger fireAlarm
                 const amIAssigned = task.assignees?.some((a: any) => String(a.id) === String(currentUser.uid));
-                if (!amIAssigned) return;
+                const isDirector = currentUser?.department === 'giamdoc';
+                if (!amIAssigned && !isDirector) return;
 
                 const deadlineDate = new Date(task.deadline);
                 const now = new Date();
