@@ -33,7 +33,7 @@ export default function Employees() {
     const [newUser, setNewUser] = useState<any>({ status: 'Active', avatar: 'https://i.pravatar.cc/150?img=1', statusColor: '#10b981' });
     const [activeFilter, setActiveFilter] = useState('Tất cả');
 
-    const filters = ['Tất cả', 'Sáng tạo', 'Chiến lược', 'Kỹ thuật', 'Khách hàng'];
+    const filters = ['Tất cả', 'Giám Đốc', 'Trưởng Phòng', 'Nhân Viên'];
 
     const handleDelete = async (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -302,11 +302,11 @@ export default function Employees() {
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                         <div>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-light)', marginBottom: '0.25rem', display: 'block' }}>Chức vụ</label>
-                                            <input type="text" value={isAdding ? (newUser.role || '') : (editedUser?.role || '')} onChange={e => isAdding ? setNewUser({ ...newUser, role: e.target.value }) : setEditedUser({ ...editedUser!, role: e.target.value })} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--color-border)', background: 'var(--color-background)', color: 'var(--color-text)', outline: 'none' }} />
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-light)', marginBottom: '0.25rem', display: 'block' }}>Chuyên môn</label>
+                                            <input type="text" placeholder="VD: Backend, Design..." value={isAdding ? (newUser.role || '') : (editedUser?.role || '')} onChange={e => isAdding ? setNewUser({ ...newUser, role: e.target.value }) : setEditedUser({ ...editedUser!, role: e.target.value })} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--color-border)', background: 'var(--color-background)', color: 'var(--color-text)', outline: 'none' }} />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-light)', marginBottom: '0.25rem', display: 'block' }}>Phòng ban</label>
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-light)', marginBottom: '0.25rem', display: 'block' }}>Chức vụ</label>
                                             <select
                                                 value={isAdding ? (newUser.department || '') : (editedUser?.department || '')}
                                                 onChange={e => isAdding ? setNewUser({ ...newUser, department: e.target.value }) : setEditedUser({ ...editedUser!, department: e.target.value })}

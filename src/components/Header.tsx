@@ -14,10 +14,10 @@ export default function Header() {
 
     // Fallback info
     const userName = currentUser?.name || 'Nhân viên';
-    const userRole = currentUser?.department === 'sangtao' ? 'Khối Sáng tạo' :
-                     currentUser?.department === 'chienluoc' ? 'Khối Chiến lược' :
-                     currentUser?.department === 'kythuat' ? 'Khối Kỹ thuật & Công nghệ' :
-                     currentUser?.department === 'khachhang' ? 'Khối Quản lý Khách hàng' :
+    const userRole = currentUser?.department === 'giamdoc' ? 'Giám Đốc' :
+                     currentUser?.department === 'truongphong' ? 'Trưởng Phòng' :
+                     currentUser?.department === 'nhanvien' ? 'Nhân Viên' :
+                     currentUser?.department === 'sangtao' ? 'Khối Sáng tạo' :
                      currentUser?.department || 'Thành viên';
     const userAvatar = currentUser?.avatar || 'https://i.pravatar.cc/150?img=11';
 

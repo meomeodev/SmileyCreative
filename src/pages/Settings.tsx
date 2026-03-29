@@ -13,7 +13,11 @@ export default function Settings() {
     const initialProfile = {
         name: currentUser?.name || 'Nhân viên',
         email: currentUser?.email || 'Chưa cập nhật',
-        role: currentUser?.department || 'Phòng ban',
+        role: currentUser?.department === 'giamdoc' ? 'Giám Đốc' : 
+              currentUser?.department === 'truongphong' ? 'Trưởng Phòng' : 
+              currentUser?.department === 'nhanvien' ? 'Nhân Viên' : 
+              currentUser?.department === 'sangtao' ? 'Khối Sáng tạo' : 
+              (currentUser?.department || 'Chức vụ'),
         phone: currentUser?.phone || '',
         address: currentUser?.address || '',
         avatar: currentUser?.avatar || 'https://i.pravatar.cc/150?img=11'
@@ -43,10 +47,16 @@ export default function Settings() {
 
     useEffect(() => {
         if (currentUser) {
+            const mappedRole = currentUser.department === 'giamdoc' ? 'Giám Đốc' : 
+                               currentUser.department === 'truongphong' ? 'Trưởng Phòng' : 
+                               currentUser.department === 'nhanvien' ? 'Nhân Viên' : 
+                               currentUser.department === 'sangtao' ? 'Khối Sáng tạo' : 
+                               (currentUser.department || currentUser.role || initialProfile.role);
+
             setFormData({
                 name: currentUser.name || initialProfile.name,
                 email: currentUser.email || initialProfile.email,
-                role: currentUser.department || currentUser.role || initialProfile.role,
+                role: mappedRole,
                 phone: currentUser.phone || initialProfile.phone,
                 address: currentUser.address || initialProfile.address,
                 avatar: currentUser.avatar || initialProfile.avatar

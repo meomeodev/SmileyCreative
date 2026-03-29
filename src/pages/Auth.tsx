@@ -176,7 +176,7 @@ export default function Auth() {
                                     />
                                 </div>
                                 <div className="input-group" style={{ flex: 1.2 }}>
-                                    <label>Phòng ban</label>
+                                    <label>Chức vụ</label>
                                     <select 
                                         required={!isLoginMode} 
                                         value={department}
@@ -184,10 +184,9 @@ export default function Auth() {
                                         className="styled-input custom-select"
                                     >
                                         <option value="" disabled hidden>Lựa chọn...</option>
-                                        <option value="sangtao">Khối Sáng tạo</option>
-                                        <option value="chienluoc">Khối Chiến lược</option>
-                                        <option value="kythuat">Khối Kỹ thuật & Công nghệ</option>
-                                        <option value="khachhang">Khối Quản lý Khách hàng</option>
+                                        <option value="giamdoc">Giám Đốc</option>
+                                        <option value="truongphong">Trưởng Phòng</option>
+                                        <option value="nhanvien">Nhân Viên</option>
                                     </select>
                                 </div>
                             </div>
