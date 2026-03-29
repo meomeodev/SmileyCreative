@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { User, Bell, Settings as SettingsIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
-import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, query, collection, getDocs, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
 
@@ -96,14 +96,55 @@ export default function Settings() {
         const updatedUser = { ...currentUser, ...formData, department: formData.role };
         
         if (currentUser?.id) {
+            toast.loading('Đang đồng bộ thay đổi...', { id: 'saveProfile' });
             try {
+                // Update 'users' collection
                 await updateDoc(doc(db, 'users', currentUser.id), updatedUser);
-                toast.success('Đã đồng bộ thay đổi hồ sơ thành công lên đám mây!', { duration: 3000 });
+
+                // Update 'employees' collection to keep global team list synced
+                await updateDoc(doc(db, 'employees', currentUser.id), {
+                    name: formData.name,
+                    avatar: formData.avatar,
+                    phone: formData.phone || '',
+                    location: formData.address || ''
+                }).catch(() => {});
+
+                // Batch update cached user data within any assigned tasks
+                try {
+                    const qTasks = query(collection(db, 'project_tasks'));
+                    const tasksSnap = await getDocs(qTasks);
+                    const batch = writeBatch(db);
+                    let shouldCommit = false;
+
+                    tasksSnap.forEach(tDoc => {
+                        const taskData = tDoc.data();
+                        if (taskData.assignees && Array.isArray(taskData.assignees)) {
+                            const isAssigned = taskData.assignees.some((a: any) => String(a.id) === String(currentUser.id));
+                            if (isAssigned) {
+                                const newAssignees = taskData.assignees.map((a: any) => 
+                                    String(a.id) === String(currentUser.id) 
+                                    ? { ...a, name: formData.name, avatar: formData.avatar } 
+                                    : a
+                                );
+                                batch.update(doc(db, 'project_tasks', tDoc.id), { assignees: newAssignees });
+                                shouldCommit = true;
+                            }
+                        }
+                    });
+
+                    if (shouldCommit) {
+                        await batch.commit();
+                    }
+                } catch (batchErr) {
+                    console.error("Lỗi cập nhật batch tasks:", batchErr);
+                }
+
+                toast.success('Đã đồng bộ thay đổi hồ sơ thành công lên đám mây!', { id: 'saveProfile', duration: 3000 });
                 // Reload location to fetch new context and sync app-wide avatar/name
                 setTimeout(() => window.location.reload(), 1500);
             } catch (error) {
                 console.error('Lỗi khi cập nhật hồ sơ Firestore:', error);
-                toast.error('Không thể kết nối máy chủ để lưu thay đổi. Vui lòng thử lại sau.');
+                toast.error('Không thể kết nối máy chủ để lưu thay đổi. Vui lòng thử lại sau.', { id: 'saveProfile' });
             }
         } else {
             toast.error('Lỗi: Hồ sơ này chưa được đồng bộ từ Cloud (Thiếu ID).');
