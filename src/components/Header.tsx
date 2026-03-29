@@ -3,7 +3,8 @@ import { Search, Bell, X, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
-import { collection, query, where, onSnapshot, updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, writeBatch, addDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 export default function Header() {
     const [showNotifications, setShowNotifications] = useState(false);
@@ -53,6 +54,85 @@ export default function Header() {
             setNotifications(notifs);
         });
         return () => unsubscribe();
+    }, [currentUser]);
+
+    // Timer refs to clean up alarms
+    const alarmTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+    useEffect(() => {
+        if (!currentUser?.uid) return;
+
+        const qTasks = query(collection(db, 'project_tasks'));
+
+        const fireAlarm = async (task: any) => {
+            try {
+                // Hiển thị Popup Toast rung chông giật gân
+                toast.error(`⏰ BÁO ĐỘNG: Công việc "${task.title}" ĐÃ ĐẾN HẠN CHÓT!`, { duration: 8000, position: 'top-center' });
+                
+                // Đánh dấu đã báo để tránh spam nhiều lần hoặc spam máy người khác
+                await updateDoc(doc(db, 'project_tasks', task.id), { notifiedPassed: true });
+                
+                // Gửi Notification Panel cho toàn bộ những người có liên quan
+                if (task.assignees && task.assignees.length > 0) {
+                    for (const assignee of task.assignees) {
+                        try {
+                            await addDoc(collection(db, 'notifications'), {
+                                userId: String(assignee.id),
+                                title: '⏰ Báo động Hạn chót',
+                                text: `Công việc "${task.title}" thuộc dự án của bạn đã quá thời gian cho phép hoàn thành!`,
+                                time: new Date().toISOString(),
+                                isNew: true,
+                                link: `/projects`
+                            });
+                        } catch(e) {}
+                    }
+                }
+            } catch(e) {
+                console.error("Lỗi khi báo động task", e);
+            }
+            if (alarmTimersRef.current[task.id]) delete alarmTimersRef.current[task.id];
+        };
+
+        const unsubscribe = onSnapshot(qTasks, (snapshot) => {
+            const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+            allTasks.forEach(task => {
+                // Nếu không có hạn chót, đã hoàn thành, hoặc đã từng báo động thì bỏ qua
+                if (!task.deadline || task.notifiedPassed || task.status === 'HOÀN THÀNH') {
+                    if (alarmTimersRef.current[task.id]) {
+                        clearTimeout(alarmTimersRef.current[task.id]);
+                        delete alarmTimersRef.current[task.id];
+                    }
+                    return;
+                }
+
+                // Chỉ những người được giao hoặc liên quan mới chịu trách nhiệm canh đồng hồ (giảm tải)
+                const amIAssigned = task.assignees?.some((a: any) => String(a.id) === String(currentUser.uid));
+                if (!amIAssigned) return;
+
+                const deadlineDate = new Date(task.deadline);
+                const now = new Date();
+                const msUntilDeadline = deadlineDate.getTime() - now.getTime();
+
+                // Nếu thời gian đã lố (hoặc chạm ngưỡng) -> Pinging alarm!
+                if (msUntilDeadline <= 0) {
+                    fireAlarm(task);
+                } else if (msUntilDeadline <= 24 * 60 * 60 * 1000) {
+                    // Nếu thời gian còn lại dưới 24 giờ, thì cài báo thức (setTimeout)
+                    // (setTimeout trong JS chạy quá giới hạn 32 bit int (~24 ngày) sẽ bị lỗi tức thời, nên ta giới hạn quét 24 giờ)
+                    if (!alarmTimersRef.current[task.id]) {
+                        alarmTimersRef.current[task.id] = setTimeout(() => {
+                            fireAlarm(task);
+                        }, msUntilDeadline);
+                    }
+                }
+            });
+        });
+
+        return () => {
+            unsubscribe();
+            Object.values(alarmTimersRef.current).forEach(clearTimeout);
+        };
     }, [currentUser]);
 
     const handleMarkAllRead = async () => {
