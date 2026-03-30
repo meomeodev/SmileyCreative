@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Plus, Filter, MoreVertical, LayoutGrid, CheckSquare, Calendar, Folder, X, Edit, Trash2, ArrowLeft, File, Download } from 'lucide-react';
+import { Search, Plus, Filter, LayoutGrid, CheckSquare, Calendar, Folder, X, Edit, Trash2, ArrowLeft, File, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db, storage } from '../../config/firebase';
 import { collection, query, getDocs, addDoc, updateDoc, doc, deleteDoc, where } from 'firebase/firestore';
