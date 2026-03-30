@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ThumbsUp, MessageSquare, Share2, Image as ImageIcon, Video, Link as LinkIcon, Send, Smile, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import Avatar from '../components/Avatar';
+import { useAuth } from '../contexts/AuthContext';
 
 type Comment = {
     id: number;
@@ -64,6 +65,7 @@ const mockPosts: Post[] = [
 ];
 
 export default function KnowledgeBase() {
+    const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('all');
     const [posts, setPosts] = useState(mockPosts);
     const [replyingTo, setReplyingTo] = useState<{ postId: number, commentId: number, author: string } | null>(null);
@@ -90,9 +92,9 @@ export default function KnowledgeBase() {
 
         const newPost = {
             id: Date.now(),
-            author: 'Nguyễn Hoàng Đức Việt',
-            role: 'Quản trị viên',
-            avatar: 'https://i.pravatar.cc/150?img=11',
+            author: currentUser?.name || 'Nhân sự chưa cập nhật tên',
+            role: currentUser?.department || 'Thành viên',
+            avatar: currentUser?.avatar || 'https://ui-avatars.com/api/?name=NV',
             time: 'Vừa xong',
             content: content,
             likes: 0,
@@ -134,8 +136,8 @@ export default function KnowledgeBase() {
             if (post.id === postId) {
                 const newComment: Comment = {
                     id: Date.now(),
-                    author: 'Nguyễn Hoàng Đức Việt',
-                    avatar: 'https://i.pravatar.cc/150?img=11',
+                    author: currentUser?.name || 'Nhân sự',
+                    avatar: currentUser?.avatar || 'https://ui-avatars.com/api/?name=NV',
                     content: commentStr,
                     time: 'Vừa xong',
                     ...(attachment?.type === 'image' && { image: attachment.url }),
@@ -199,7 +201,7 @@ export default function KnowledgeBase() {
                 {/* Create Post */}
                 <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <Avatar src="https://i.pravatar.cc/150?img=11" name="Me" size={40} />
+                        <Avatar src={currentUser?.avatar || "https://ui-avatars.com/api/?name=?"} name={currentUser?.name || "Bạn"} size={40} />
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
@@ -386,7 +388,7 @@ export default function KnowledgeBase() {
 
                                     {/* Comment form */}
                                     <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                                        <Avatar src="https://i.pravatar.cc/150?img=11" name="Me" size={32} />
+                                        <Avatar src={currentUser?.avatar || "https://ui-avatars.com/api/?name=?"} name={currentUser?.name || "Bạn"} size={32} />
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                             {replyingTo?.postId === post.id && (
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', justifyContent: 'space-between', paddingLeft: '0.5rem' }}>
