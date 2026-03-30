@@ -5,10 +5,12 @@ import { db } from '../config/firebase';
 import { collection, query, getDocs, setDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import PageTransition from '../components/PageTransition';
 import Avatar from '../components/Avatar';
+import { useAdminAccess } from '../hooks/useAdminAccess';
 
 export default function Employees() {
     const [employees, setEmployees] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const hasAccess = useAdminAccess();
 
     useEffect(() => {
         const fetchEmployees = async () => {
@@ -83,13 +85,15 @@ export default function Employees() {
                     <button className="btn btn-secondary" style={{ background: 'var(--color-surface)', fontSize: '0.9rem', fontWeight: 600, border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.6rem 1.2rem' }}>
                         <Mail size={16} /> Xuất CSV
                     </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => { setIsAdding(true); setNewUser({ status: 'Active', avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`, statusColor: '#10b981', department: 'SÁNG TẠO', location: 'HÀ NỘI' }); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', fontWeight: 600 }}
-                    >
-                        <Plus size={18} /> Thêm Nhân viên
-                    </button>
+                    {hasAccess && (
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => { setIsAdding(true); setNewUser({ status: 'Active', avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`, statusColor: '#10b981', department: 'SÁNG TẠO', location: 'HÀ NỘI' }); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', fontWeight: 600 }}
+                        >
+                            <Plus size={18} /> Thêm Nhân viên
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -167,9 +171,11 @@ export default function Employees() {
                     </div>
                 ) : filtered.map((emp) => (
                     <div key={emp.id} className="glass-panel" style={{ padding: '1.5rem', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: '1rem', position: 'relative' }}>
-                        <button onClick={(e) => handleDelete(emp.id, e)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', outline: 'none' }} title="Xóa nhân sự">
-                            <Trash2 size={16} />
-                        </button>
+                        {hasAccess && (
+                            <button onClick={(e) => handleDelete(emp.id, e)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', outline: 'none' }} title="Xóa nhân sự">
+                                <Trash2 size={16} />
+                            </button>
+                        )}
 
                         <div style={{ position: 'relative', marginBottom: '1rem', marginTop: '0.5rem' }}>
                             <Avatar src={emp.avatar} name={emp.name} size={80} style={{ border: '3px solid var(--color-surface)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }} />
@@ -291,10 +297,12 @@ export default function Employees() {
                                         </div>
                                     </div>
 
-                                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-                                        <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setIsEditing(true); setEditedUser({ ...selectedUser! }); }}>Sửa hồ sơ</button>
-                                        <button className="btn btn-secondary" style={{ flex: 1, color: '#EF4444', borderColor: '#FECACA', background: '#FEF2F2' }} onClick={() => selectedUser && handleDelete(selectedUser.id)}>Xóa hồ sơ</button>
-                                    </div>
+                                    {hasAccess && (
+                                        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
+                                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setIsEditing(true); setEditedUser({ ...selectedUser! }); }}>Sửa hồ sơ</button>
+                                            <button className="btn btn-secondary" style={{ flex: 1, color: '#EF4444', borderColor: '#FECACA', background: '#FEF2F2' }} onClick={() => selectedUser && handleDelete(selectedUser.id)}>Xóa hồ sơ</button>
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem', animation: 'fadeIn 0.2s' }}>

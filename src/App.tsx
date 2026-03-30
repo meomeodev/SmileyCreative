@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import Timekeeping from './pages/Timekeeping';
 import Employees from './pages/Employees';
 import Projects from './pages/Projects';
@@ -31,11 +32,16 @@ function App() {
             <Route path="timekeeping" element={<Timekeeping />} />
             <Route path="employees" element={<Employees />} />
             <Route path="projects" element={<Projects />} />
-            <Route path="crm" element={<CRM />} />
+            
+            {/* Các Routes yêu cầu quyền quản trị */}
+            <Route element={<RoleProtectedRoute />}>
+              <Route path="crm" element={<CRM />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+
             <Route path="knowledge" element={<KnowledgeBase />} />
             <Route path="chat" element={<Chat />} />
             <Route path="ai-assistant" element={<AIAssistant />} />
-            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
         </Routes>

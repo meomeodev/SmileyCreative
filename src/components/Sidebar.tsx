@@ -3,6 +3,7 @@ import {
     Users, Briefcase, CalendarClock, MessageSquare,
     BookOpen, LayoutDashboard, Settings, LogOut
 } from 'lucide-react';
+import { useAdminAccess } from '../hooks/useAdminAccess';
 
 const MENU_ITEMS = [
     { icon: CalendarClock, label: 'Chấm công', path: '/timekeeping' },
@@ -15,6 +16,7 @@ const MENU_ITEMS = [
 
 export default function Sidebar() {
     const navigate = useNavigate();
+    const hasAccess = useAdminAccess();
 
     return (
         <aside className="glass-panel sidebar" style={{
@@ -52,7 +54,7 @@ export default function Sidebar() {
             </div>
 
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {MENU_ITEMS.map((item) => (
+                {MENU_ITEMS.filter((item) => hasAccess ? true : item.path !== '/crm').map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
@@ -89,26 +91,28 @@ export default function Sidebar() {
                 >
                     ✨ Trợ lý AI
                 </NavLink>
-                <NavLink
-                    to="/settings"
-                    style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.75rem 1rem',
-                        width: '100%',
-                        borderRadius: 'var(--border-radius-sm)',
-                        color: isActive ? 'var(--color-primary)' : 'var(--color-text-light)',
-                        backgroundColor: isActive ? 'var(--color-background)' : 'transparent',
-                        fontWeight: isActive ? 600 : 500,
-                        transition: 'all var(--transition-fast)',
-                        textDecoration: 'none'
-                    })}
-                    className={({ isActive }) => isActive ? 'active-nav menu-item-transition hover-lift active-bounce' : 'hover-nav menu-item-transition hover-lift active-bounce'}
-                >
-                    <Settings size={20} />
-                    <span>Cài đặt</span>
-                </NavLink>
+                {hasAccess && (
+                    <NavLink
+                        to="/settings"
+                        style={({ isActive }) => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            padding: '0.75rem 1rem',
+                            width: '100%',
+                            borderRadius: 'var(--border-radius-sm)',
+                            color: isActive ? 'var(--color-primary)' : 'var(--color-text-light)',
+                            backgroundColor: isActive ? 'var(--color-background)' : 'transparent',
+                            fontWeight: isActive ? 600 : 500,
+                            transition: 'all var(--transition-fast)',
+                            textDecoration: 'none'
+                        })}
+                        className={({ isActive }) => isActive ? 'active-nav menu-item-transition hover-lift active-bounce' : 'hover-nav menu-item-transition hover-lift active-bounce'}
+                    >
+                        <Settings size={20} />
+                        <span>Cài đặt</span>
+                    </NavLink>
+                )}
 
                 <button
                     onClick={() => {
