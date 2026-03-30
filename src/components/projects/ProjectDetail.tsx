@@ -172,7 +172,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
     };
     
     const handleInlineUpdate = async (task: any, field: string, value: string) => {
-        let updateData: any = { [field]: value };
+        const updateData: any = { [field]: value };
         if (field === 'status') {
              let statusColor = '#F59E0B'; // CHƯA BẮT ĐẦU
              if (value === 'ĐANG LÀM') statusColor = '#ff7d0d';
@@ -514,7 +514,7 @@ export default function ProjectDetail({ project, onBack }: { project: any, onBac
                                                         value={task.deadline || ''}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            try { if ('showPicker' in HTMLInputElement.prototype) (e.target as HTMLInputElement).showPicker(); } catch(err){}
+                                                            try { if ('showPicker' in HTMLInputElement.prototype) (e.target as HTMLInputElement).showPicker(); } catch(err){ console.error(err); }
                                                         }}
                                                         onChange={(e) => handleInlineUpdate(task, 'deadline', e.target.value)}
                                                     />

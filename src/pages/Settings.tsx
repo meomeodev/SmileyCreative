@@ -62,6 +62,7 @@ export default function Settings() {
                 avatar: currentUser.avatar || initialProfile.avatar
             });
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser]);
 
     const avatarIcons = [
@@ -107,7 +108,7 @@ export default function Settings() {
                     avatar: formData.avatar,
                     phone: formData.phone || '',
                     location: formData.address || ''
-                }).catch(() => {});
+                }).catch((e) => console.error("Lỗi update employee", e));
 
                 // Batch update cached user data within any assigned tasks
                 try {

@@ -11,7 +11,7 @@ export default function Auth() {
     const location = useLocation();
 
     // Mode state
-    const [isLoginMode, setIsLoginMode] = useState(location.pathname !== '/register');
+    const isLoginMode = location.pathname !== '/register';
     const [showPassword, setShowPassword] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -25,12 +25,11 @@ export default function Auth() {
     // Error state
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        setIsLoginMode(location.pathname !== '/register');
-    }, [location.pathname]);
+
 
     useEffect(() => {
-        setIsMounted(true);
+        const timer = setTimeout(() => setIsMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const toggleMode = (e: React.MouseEvent) => {

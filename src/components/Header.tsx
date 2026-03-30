@@ -90,7 +90,9 @@ export default function Header() {
                                     isNew: true,
                                     link: `/projects/${task.projectId || ''}`
                                 });
-                            } catch(e) {}
+                            } catch(e) {
+                                console.error("Lỗi thêm thông báo", e);
+                            }
                         }
                     }
                 }
@@ -146,9 +148,10 @@ export default function Header() {
             });
         });
 
+        const currentTimers = alarmTimersRef.current;
         return () => {
             unsubscribe();
-            Object.values(alarmTimersRef.current).forEach(clearTimeout);
+            Object.values(currentTimers).forEach(clearTimeout);
         };
     }, [currentUser]);
 

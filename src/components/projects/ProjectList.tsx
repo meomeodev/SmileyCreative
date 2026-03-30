@@ -32,7 +32,8 @@ export default function ProjectList({ onSelectProject }: { onSelectProject: (p: 
             try {
                 const snap = await getDocs(collection(db, 'projects'));
                 setProjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            } catch(e) {
+            } catch(err) {
+               console.error(err);
                toast.error('Lỗi tải danh sách dự án');
             }
         } finally {
