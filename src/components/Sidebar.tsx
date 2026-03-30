@@ -1,15 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     Users, Briefcase, CalendarClock, MessageSquare,
-    BookOpen, LayoutDashboard, Settings, LogOut
+    BookOpen, LayoutDashboard, Settings, LogOut, ClipboardList
 } from 'lucide-react';
 import { useAdminAccess } from '../hooks/useAdminAccess';
 
 const MENU_ITEMS = [
     { icon: CalendarClock, label: 'Chấm công', path: '/timekeeping' },
+    { icon: ClipboardList, label: 'Giám sát BC', path: '/attendance', adminOnly: true },
     { icon: Users, label: 'Nhân sự', path: '/employees' },
     { icon: Briefcase, label: 'Dự án', path: '/projects' },
-    { icon: LayoutDashboard, label: 'CRM', path: '/crm' },
+    { icon: LayoutDashboard, label: 'CRM', path: '/crm', adminOnly: true },
     { icon: BookOpen, label: 'Học tập', path: '/knowledge' },
     { icon: MessageSquare, label: 'Chat Nội bộ', path: '/chat' },
 ];
@@ -54,7 +55,7 @@ export default function Sidebar() {
             </div>
 
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {MENU_ITEMS.filter((item) => hasAccess ? true : item.path !== '/crm').map((item) => (
+                {MENU_ITEMS.filter((item) => hasAccess ? true : !item.adminOnly).map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}

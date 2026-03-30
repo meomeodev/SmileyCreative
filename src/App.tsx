@@ -11,6 +11,7 @@ import Chat from './pages/Chat';
 import AIAssistant from './pages/AIAssistant';
 import Settings from './pages/Settings';
 import Auth from './pages/Auth';
+import AttendanceTracking from './pages/AttendanceTracking';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { AnimatePresence } from 'framer-motion';
@@ -36,6 +37,7 @@ function App() {
             {/* Các Routes yêu cầu quyền quản trị */}
             <Route element={<RoleProtectedRoute />}>
               <Route path="crm" element={<CRM />} />
+              <Route path="attendance" element={<AttendanceTracking />} />
             </Route>
 
             <Route path="settings" element={<Settings />} />
